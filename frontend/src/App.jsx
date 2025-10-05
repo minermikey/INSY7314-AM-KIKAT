@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
-function App() {
+export default function App() {
   const [testMsg, setTestMsg] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:5000/test')
+    axios.get('https://localhost:5000/test')
       .then(res => setTestMsg(res.data.message))
       .catch(err => console.error(err));
   }, []);

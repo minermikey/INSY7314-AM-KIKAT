@@ -14,6 +14,10 @@ export default function App() {
     <>
       <h2>Welcome to Secure Blog</h2>
       <p>Backend says: {testMsg}</p>
+       <NavigationContainer>
+      <AppNavigator />
+    </NavigationContainer>
+
     </>
   );
 }

@@ -5,24 +5,32 @@ export default function PaymentPage() {
   const [senderEmail, setSenderEmail] = useState('');
   const [receiverEmail, setReceiverEmail] = useState('');
   const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState('');
+  const [currency, setCurrency] = useState('USD'); // default currency
   const [provider, setProvider] = useState('');
   const [accountInfo, setAccountInfo] = useState('');
   const [swiftCode, setSwiftCode] = useState('');
   const [status, setStatus] = useState('');
+  const [statusColor, setStatusColor] = useState('');
+
+  const currencies = [
+    'USD','EUR','GBP','AUD','CAD','ZAR','JPY','CNY','INR','NZD','CHF','SGD','HKD'
+  ];
 
   const submitPayment = async (e) => {
     e.preventDefault();
     setStatus('');
+    setStatusColor('');
 
     if (!senderEmail || !receiverEmail || !amount || !currency || !provider || !accountInfo || !swiftCode) {
       setStatus('All fields are required.');
+      setStatusColor('red');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(senderEmail) || !emailRegex.test(receiverEmail)) {
       setStatus('Please enter valid email addresses.');
+      setStatusColor('red');
       return;
     }
 
@@ -37,29 +45,45 @@ export default function PaymentPage() {
     };
 
     try {
-      const res = await axios.post('http://localhost:5000/api/payments', payload);
-      setStatus(res.data.message || 'Payment submitted successfully!');
+      // Save payment to MongoDB
+      await axios.post('http://localhost:5000/api/payments', payload);
+
+      // Always show clean success message
+      setStatus('Payment Successful!');
+      setStatusColor('green');
+
+      // Request PayFast sandbox URL
+      const payfastRes = await axios.post('http://localhost:5000/payfast/create', {
+        amount,
+        item_name: 'CBA Payment',
+        buyer_email: senderEmail,
+      });
+
+      if (payfastRes.data.url) {
+        // Redirect user to PayFast sandbox
+        window.location.href = payfastRes.data.url;
+      } else {
+        setStatus('Failed to generate PayFast link.');
+        setStatusColor('red');
+      }
+
+      // Reset fields
       setSenderEmail('');
       setReceiverEmail('');
       setAmount('');
-      setCurrency('');
+      setCurrency('USD');
       setProvider('');
       setAccountInfo('');
       setSwiftCode('');
     } catch (err) {
-      console.error(err);
+      console.error(err.response?.data || err.message);
       setStatus('Failed to process payment.');
+      setStatusColor('red');
     }
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'flex-start',
-      padding: 32,
-      gap: 24
-    }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: 32, gap: 24 }}>
       <div style={{
         width: '100%',
         maxWidth: 900,
@@ -79,7 +103,7 @@ export default function PaymentPage() {
             type="email"
             placeholder="Sender Email"
             value={senderEmail}
-            onChange={e => setSenderEmail(e.target.value)}
+            onChange={(e) => setSenderEmail(e.target.value)}
           />
 
           <input
@@ -87,7 +111,7 @@ export default function PaymentPage() {
             type="email"
             placeholder="Receiver Email"
             value={receiverEmail}
-            onChange={e => setReceiverEmail(e.target.value)}
+            onChange={(e) => setReceiverEmail(e.target.value)}
           />
 
           <input
@@ -95,49 +119,52 @@ export default function PaymentPage() {
             type="number"
             placeholder="Amount"
             value={amount}
-            onChange={e => setAmount(e.target.value)}
+            onChange={(e) => setAmount(e.target.value)}
           />
 
-          <input
+          <select
             className="form-control"
-            placeholder="Currency (e.g. USD, EUR)"
             value={currency}
-            onChange={e => setCurrency(e.target.value)}
-          />
+            onChange={(e) => setCurrency(e.target.value)}
+          >
+            {currencies.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
 
           <input
             className="form-control"
             placeholder="Provider (SWIFT)"
             value={provider}
-            onChange={e => setProvider(e.target.value)}
+            onChange={(e) => setProvider(e.target.value)}
           />
 
           <input
             className="form-control"
             placeholder="Account Information"
             value={accountInfo}
-            onChange={e => setAccountInfo(e.target.value)}
+            onChange={(e) => setAccountInfo(e.target.value)}
           />
 
           <input
             className="form-control"
             placeholder="SWIFT Code"
             value={swiftCode}
-            onChange={e => setSwiftCode(e.target.value)}
+            onChange={(e) => setSwiftCode(e.target.value)}
           />
 
           <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
-            <button className="btn btn-primary btn-lg" style={{ flex: 1, fontSize: 18 }} type="submit">
+            <button
+              className="btn btn-primary btn-lg"
+              style={{ flex: 1, fontSize: 18 }}
+              type="submit"
+            >
               Pay Now
             </button>
           </div>
 
           {status && (
-            <div style={{
-              color: status.toLowerCase().includes('success') ? 'green' : 'red',
-              fontSize: 16,
-              marginTop: 8
-            }}>
+            <div style={{ color: statusColor, fontSize: 16, marginTop: 8 }}>
               {status}
             </div>
           )}

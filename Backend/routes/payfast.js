@@ -9,7 +9,7 @@ const PF_MERCHANT_KEY = process.env.PF_MERCHANT_KEY;
 const PF_PASSPHRASE = process.env.PF_PASSPHRASE || '';
 const PF_URL = 'https://sandbox.payfast.co.za/eng/process';
 
-// Correct signature generation (PayFast exact format)
+// ✅ Generate PayFast signature (strictly correct format)
 function generateSignature(data) {
   const sortedKeys = Object.keys(data).sort();
   const queryString = sortedKeys
@@ -23,61 +23,72 @@ function generateSignature(data) {
   return crypto.createHash('md5').update(fullString).digest('hex');
 }
 
+// ✅ Handle payment creation
 router.post('/create', async (req, res) => {
-  try {
-    const { amount, item_name, buyer_email } = req.body;
+  console.log('💡 Incoming payment request:', req.body);
 
-    if (!amount || !item_name || !buyer_email) {
+  try {
+    const { amount, currency, senderEmail, receiverEmail, provider, accountInfo, swiftCode } = req.body;
+
+    if (!amount || !senderEmail || !receiverEmail) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    const item_name = `Payment via ${provider || 'Bank Transfer'}`;
     const data = {
       merchant_id: PF_MERCHANT_ID,
       merchant_key: PF_MERCHANT_KEY,
-      return_url: 'https://sandbox.payfast.co.za/eng/process/success',
-      cancel_url: 'https://sandbox.payfast.co.za/eng/process/cancel',
-      notify_url: 'https://sandbox.payfast.co.za/eng/process/notify',
+      return_url: 'https://yourapp.onrender.com/success',
+      cancel_url: 'https://yourapp.onrender.com/cancel',
+      notify_url: 'https://yourapp.onrender.com/notify',
       amount: parseFloat(amount).toFixed(2),
       item_name,
-      email_address: buyer_email,
-      m_payment_id: 'TEST-' + Date.now(),
+      email_address: senderEmail,
+      m_payment_id: 'PAY-' + Date.now(),
     };
 
-    const signature = generateSignature(data);
-    data.signature = signature;
+    data.signature = generateSignature(data);
+    const pfUrl = PF_URL + '?' + Object.entries(data)
+      .map(([key, val]) => `${key}=${encodeURIComponent(val)}`)
+      .join('&');
 
-    const pfUrl =
-      PF_URL +
-      '?' +
-      Object.entries(data)
-        .map(([key, val]) => `${key}=${encodeURIComponent(val)}`)
-        .join('&');
+    console.log('✅ Generated PayFast URL:', pfUrl);
+
+    // ✅ Optional email confirmations
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: senderEmail,
+      subject: 'Payment Initiated',
+      text: `You have sent ${currency || 'ZAR'} ${amount} to ${receiverEmail}.`,
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: receiverEmail,
+      subject: 'Payment Received',
+      text: `You are receiving ${currency || 'ZAR'} ${amount} from ${senderEmail}.`,
+    });
 
     return res.json({
-      message: 'PayFast sandbox link generated successfully.',
+      message: '✅ PayFast sandbox link generated successfully.',
       url: pfUrl,
     });
+
   } catch (err) {
-    console.error('PayFast error:', err);
+    console.error('❌ Payment creation failed:');
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
+    console.error('Error stack:', err.stack);
 
-    try {
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-      });
-
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: process.env.EMAIL_USER,
-        subject: 'Payment processing failed (PayFast)',
-        text: `Error: ${err.message}`,
-      });
-      console.log('❗ Error email sent');
-    } catch (mailErr) {
-      console.error('Email send error:', mailErr);
-    }
-
-    res.status(500).json({ message: 'Payment failed, email sent.' });
+    res.status(500).json({
+      message: 'Failed to process payment.',
+      error: err.message,
+    });
   }
 });
 

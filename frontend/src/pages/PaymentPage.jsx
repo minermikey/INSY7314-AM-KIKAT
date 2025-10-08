@@ -11,6 +11,7 @@ export default function PaymentPage() {
   const [swiftCode, setSwiftCode] = useState('');
   const [status, setStatus] = useState('');
   const [statusColor, setStatusColor] = useState('');
+  const [loading, setLoading] = useState(false); // new loading state
 
   const currencies = [
     'USD','EUR','GBP','AUD','CAD','ZAR','JPY','CNY','INR','NZD','CHF','SGD','HKD'
@@ -20,10 +21,12 @@ export default function PaymentPage() {
     e.preventDefault();
     setStatus('');
     setStatusColor('');
+    setLoading(true); // start loading
 
     if (!senderEmail || !receiverEmail || !amount || !currency || !provider || !accountInfo || !swiftCode) {
       setStatus('All fields are required.');
       setStatusColor('red');
+      setLoading(false);
       return;
     }
 
@@ -31,6 +34,7 @@ export default function PaymentPage() {
     if (!emailRegex.test(senderEmail) || !emailRegex.test(receiverEmail)) {
       setStatus('Please enter valid email addresses.');
       setStatusColor('red');
+      setLoading(false);
       return;
     }
 
@@ -56,7 +60,8 @@ export default function PaymentPage() {
       const payfastRes = await axios.post('https://insy7314-am-kikat.onrender.com/payfast/create', {
         amount,
         item_name: 'CBA Payment',
-        buyer_email: senderEmail,
+        senderEmail,
+        receiverEmail,
       });
 
       if (payfastRes.data.url) {
@@ -79,6 +84,8 @@ export default function PaymentPage() {
       console.error(err.response?.data || err.message);
       setStatus('Failed to process payment.');
       setStatusColor('red');
+    } finally {
+      setLoading(false); // stop loading
     }
   };
 
@@ -158,8 +165,9 @@ export default function PaymentPage() {
               className="btn btn-primary btn-lg"
               style={{ flex: 1, fontSize: 18 }}
               type="submit"
+              disabled={loading} // disable while processing
             >
-              Pay Now
+              {loading ? 'Processing...' : 'Pay Now'}
             </button>
           </div>
 

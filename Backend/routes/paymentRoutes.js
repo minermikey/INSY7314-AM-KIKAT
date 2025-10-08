@@ -1,76 +1,52 @@
-require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const Payment = require('../models/Payment');
+require('dotenv').config();
 
-// === CONFIG VARIABLES ===
 const PF_MERCHANT_ID = process.env.PF_MERCHANT_ID;
 const PF_MERCHANT_KEY = process.env.PF_MERCHANT_KEY;
 const PF_PASSPHRASE = process.env.PF_PASSPHRASE || '';
 const PF_URL = 'https://sandbox.payfast.co.za/eng/process';
 
-console.log('✅ PayFast Config Loaded:', {
-  PF_MERCHANT_ID,
-  PF_MERCHANT_KEY,
-  PF_PASSPHRASE: PF_PASSPHRASE ? 'SET' : 'NOT SET',
-  PF_URL
-});
-
-// === SETUP NODEMAILER ===
-let transporter;
-try {
-  transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    requireTLS: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-  console.log('✅ Email transporter configured');
-} catch (err) {
-  console.error('❌ Failed to configure email transporter:', err);
-}
-
-// === HELPER: Generate PayFast signature ===
+// Correct signature generation
 function generateSignature(data) {
-  try {
-    const sortedKeys = Object.keys(data).sort();
-    const queryString = sortedKeys
-      .map((key) => `${key}=${encodeURIComponent(data[key]).replace(/%20/g, '+')}`)
-      .join('&');
-
-    const fullString = PF_PASSPHRASE
-      ? `${queryString}&passphrase=${encodeURIComponent(PF_PASSPHRASE)}`
-      : queryString;
-
-    const signature = crypto.createHash('md5').update(fullString).digest('hex');
-    console.log('🧾 Generated signature:', signature);
-    return signature;
-  } catch (err) {
-    console.error('❌ Error generating signature:', err);
-    throw err;
-  }
+  const sortedKeys = Object.keys(data).sort();
+  const queryString = sortedKeys
+    .map((key) => `${key}=${encodeURIComponent(data[key]).replace(/%20/g, '+')}`)
+    .join('&');
+  const fullString = PF_PASSPHRASE
+    ? `${queryString}&passphrase=${encodeURIComponent(PF_PASSPHRASE)}`
+    : queryString;
+  return crypto.createHash('md5').update(fullString).digest('hex');
 }
 
-// === MAIN PAYMENT ROUTE ===
+// POST /api/payments/create
 router.post('/create', async (req, res) => {
-  console.log('\n💡 Incoming payment request:', req.body);
-
+  console.log('💡 Incoming payment request:', req.body);
   try {
-    // STEP 1: Validate input
-    const { amount, item_name, senderEmail, receiverEmail } = req.body;
-    if (!amount || !item_name || !senderEmail || !receiverEmail) {
+    const { amount, currency, provider, accountInfo, swiftCode, senderEmail, receiverEmail } = req.body;
+
+    // Validation
+    if (!amount || !currency || !provider || !accountInfo || !swiftCode || !senderEmail || !receiverEmail) {
       console.warn('⚠️ Validation failed: Missing required fields');
-      return res.status(400).json({ message: 'Missing required fields', body: req.body });
+      return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    console.log('✅ Step 1 complete: Input validated.');
+    // Save payment in MongoDB
+    const payment = new Payment({
+      amount,
+      currency,
+      provider,
+      accountInfo,
+      swiftCode,
+      senderEmail,
+      receiverEmail,
+    });
+    await payment.save();
 
-    // STEP 2: Prepare PayFast data
+    // PayFast data
     const data = {
       merchant_id: PF_MERCHANT_ID,
       merchant_key: PF_MERCHANT_KEY,
@@ -78,67 +54,52 @@ router.post('/create', async (req, res) => {
       cancel_url: 'https://insy7314-am-kikat.onrender.com/cancel',
       notify_url: 'https://insy7314-am-kikat.onrender.com/notify',
       amount: parseFloat(amount).toFixed(2),
-      item_name,
+      item_name: `Transfer from ${senderEmail}`,
       email_address: senderEmail,
       m_payment_id: 'PAY-' + Date.now(),
     };
 
-    console.log('🧩 Step 2: PayFast Data:', data);
-
-    // STEP 3: Generate signature
     data.signature = generateSignature(data);
-    console.log('✅ Step 3 complete: Signature attached.');
 
-    // STEP 4: Construct redirect URL
     const pfUrl =
       PF_URL + '?' + Object.entries(data).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
-    console.log('🔗 Step 4 complete: PayFast URL generated:', pfUrl);
 
-    // STEP 5: Send emails
+    // Send emails (with error capture)
     try {
-      console.log('📧 Step 5: Sending emails...');
-      const senderMail = {
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        requireTLS: true,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+
+      await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: senderEmail,
-        subject: 'Payment Sent Confirmation',
-        text: `You have successfully sent ZAR ${amount} to ${receiverEmail}.`,
-      };
+        subject: 'Payment Sent',
+        text: `You have sent ZAR ${amount} to ${receiverEmail}.`,
+      });
 
-      const receiverMail = {
+      await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: receiverEmail,
-        subject: 'Payment Received Notification',
+        subject: 'Payment Received',
         text: `You have received ZAR ${amount} from ${senderEmail}.`,
-      };
-
-      await transporter.sendMail(senderMail);
-      console.log('✅ Email sent to sender:', senderEmail);
-
-      await transporter.sendMail(receiverMail);
-      console.log('✅ Email sent to receiver:', receiverEmail);
-    } catch (emailErr) {
-      console.error('❌ Email sending error:', emailErr);
-      return res.status(500).json({
-        message: 'Payment created, but email sending failed.',
-        emailError: emailErr.message,
       });
+
+      console.log('📧 Emails sent successfully!');
+    } catch (mailErr) {
+      console.error('📮 Email error:', mailErr);
     }
 
-    // STEP 6: Respond success
-    console.log('🎉 Step 6 complete: Payment flow successful.');
-    res.json({
-      message: 'Payment created successfully!',
-      payfast_url: pfUrl,
-      debug_data: data,
-    });
+    res.json({ message: 'Payment processed successfully', url: pfUrl });
   } catch (err) {
-    console.error('💀 FULL ERROR (Catch-All):', err);
-    res.status(500).json({
-      message: 'Failed to process payment.',
-      error: err.message,
-      stack: err.stack,
-      body: req.body,
-    });
+    console.error('💥 Full payment error:', err);
+    res.status(500).json({ message: 'Failed to process payment', error: err.message });
   }
 });
 

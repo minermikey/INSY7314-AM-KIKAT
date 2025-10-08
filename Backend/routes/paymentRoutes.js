@@ -41,10 +41,10 @@ router.post('/', async (req, res) => {
     // Send test emails (logs only)
     await sendTransactionEmails(senderEmail, receiverEmail, `${currency} ${amount}`);
 
-    res.status(200).json({ message: 'Payment processed (TEST MODE). Emails logged to console.' });
+    res.status(200).json({ message: 'Payment processed . Emails logged to console.' });
   } catch (error) {
     console.error('Payment error:', error);
-    res.status(500).json({ message: 'Failed to process payment (TEST MODE).' });
+    res.status(500).json({ message: 'Failed to process payment .' });
   }
 });
 

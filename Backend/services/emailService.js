@@ -2,13 +2,10 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,           // use TLS port
-  secure: false,       // false for port 587
-  requireTLS: true,    // enforce TLS
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // Gmail app password
+    pass: process.env.EMAIL_PASS, // App password from Gmail
   },
 });
 

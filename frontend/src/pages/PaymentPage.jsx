@@ -52,34 +52,36 @@ export default function PaymentPage() {
       return;
     }
 
-    const payload = { amount, currency, provider, accountInfo, swiftCode, senderEmail, receiverEmail };
+    const payload = { 
+      amount, 
+      currency, 
+      provider, 
+      accountInfo, 
+      swiftCode, 
+      senderEmail, 
+      receiverEmail 
+    };
 
     try {
-      // Save payment to backend
-      await axios.post('https://insy7314-am-kikat.onrender.com/api/payments/create', payload);
+      // Use only ONE endpoint - choose either payments or payfast
+      const response = await axios.post(
+        'https://insy7314-am-kikat.onrender.com/api/payments/create', 
+        payload
+      );
 
-      setStatus('Payment Successful!');
-      setStatusColor('green');
-
-      // Generate PayFast sandbox link
-      const payfastRes = await axios.post('https://insy7314-am-kikat.onrender.com/payfast/create', {
-        amount,
-        item_name: 'CBA Payment',
-        senderEmail,
-        receiverEmail,
-      });
-
-      if (payfastRes.data.url) {
-        window.location.href = payfastRes.data.url;
+      if (response.data.url) {
+        setStatus('Payment Successful! Redirecting to PayFast...');
+        setStatusColor('green');
+        window.location.href = response.data.url;
       } else {
-        setStatus('Failed to generate PayFast link.');
-        setStatusColor('red');
+        setStatus('Payment saved but no redirect URL received.');
+        setStatusColor('orange');
       }
 
       resetForm();
     } catch (err) {
-      console.error(err.response?.data || err.message);
-      setStatus('Failed to process payment.');
+      console.error('Payment error:', err.response?.data || err.message);
+      setStatus(`Failed to process payment: ${err.response?.data?.message || err.message}`);
       setStatusColor('red');
     } finally {
       setLoading(false);
@@ -108,6 +110,7 @@ export default function PaymentPage() {
             placeholder="Sender Email"
             value={senderEmail}
             onChange={(e) => setSenderEmail(e.target.value)}
+            required
           />
           <input
             className="form-control"
@@ -115,6 +118,7 @@ export default function PaymentPage() {
             placeholder="Receiver Email"
             value={receiverEmail}
             onChange={(e) => setReceiverEmail(e.target.value)}
+            required
           />
           <input
             className="form-control"
@@ -122,11 +126,15 @@ export default function PaymentPage() {
             placeholder="Amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            required
+            min="1"
+            step="0.01"
           />
           <select
             className="form-control"
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
+            required
           >
             {currencies.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -135,18 +143,21 @@ export default function PaymentPage() {
             placeholder="Provider (SWIFT)"
             value={provider}
             onChange={(e) => setProvider(e.target.value)}
+            required
           />
           <input
             className="form-control"
             placeholder="Account Information"
             value={accountInfo}
             onChange={(e) => setAccountInfo(e.target.value)}
+            required
           />
           <input
             className="form-control"
             placeholder="SWIFT Code"
             value={swiftCode}
             onChange={(e) => setSwiftCode(e.target.value)}
+            required
           />
 
           <button
@@ -158,7 +169,18 @@ export default function PaymentPage() {
             {loading ? 'Processing...' : 'Pay Now'}
           </button>
 
-          {status && <div style={{ color: statusColor, fontSize: 16, marginTop: 8 }}>{status}</div>}
+          {status && (
+            <div style={{ 
+              color: statusColor, 
+              fontSize: 16, 
+              marginTop: 8,
+              padding: '10px',
+              borderRadius: '5px',
+              backgroundColor: statusColor === 'red' ? '#ffe6e6' : statusColor === 'green' ? '#e6ffe6' : '#fff3e6'
+            }}>
+              {status}
+            </div>
+          )}
         </form>
       </div>
     </div>

@@ -24,9 +24,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// Routes - FIXED: Use consistent base paths
 app.use('/api/payments', paymentRoutes);
-app.use('/payfast', payfastRoutes);
+app.use('/api/payfast', payfastRoutes); // Changed from '/payfast'
 
 // Test endpoint
 app.get('/test', (req, res) => res.json({ message: 'Backend is running!' }));
@@ -45,7 +45,6 @@ app.use((err, req, res, next) => {
     stack: err.stack // for debugging
   });
 });
-
 
 // Start server
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

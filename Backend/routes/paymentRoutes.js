@@ -1,25 +1,28 @@
+require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
-require('dotenv').config();
 
+// PayFast credentials
 const PF_MERCHANT_ID = process.env.PF_MERCHANT_ID;
 const PF_MERCHANT_KEY = process.env.PF_MERCHANT_KEY;
 const PF_PASSPHRASE = process.env.PF_PASSPHRASE || '';
 const PF_URL = 'https://sandbox.payfast.co.za/eng/process';
 
+// Nodemailer setup using Gmail App Password
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
   secure: false,
   requireTLS: true,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.EMAIL_USER,      // your Gmail address
+    pass: process.env.EMAIL_PASS,      // Gmail App Password
   },
 });
 
+// Generate PayFast signature
 function generateSignature(data) {
   const sortedKeys = Object.keys(data).sort();
   const queryString = sortedKeys
@@ -31,10 +34,12 @@ function generateSignature(data) {
     : crypto.createHash('md5').update(queryString).digest('hex');
 }
 
+// Create payment and send emails
 router.post('/create', async (req, res) => {
   try {
     const { amount, item_name, senderEmail, receiverEmail } = req.body;
 
+    // Validation
     if (!amount || !item_name || !senderEmail || !receiverEmail) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
@@ -74,9 +79,13 @@ router.post('/create', async (req, res) => {
 
     // Return PayFast URL to frontend
     res.json({ url: pfUrl });
+
   } catch (err) {
-    console.error('Payment error:', err);
-    res.status(500).json({ message: 'Failed to process payment.' });
+    console.error('Full payment error:', err);  // FULL error log
+    res.status(500).json({ 
+      message: 'Failed to process payment.', 
+      error: err.toString() 
+    });
   }
 });
 

@@ -27,7 +27,7 @@ export default function App() {
 
   // backend test connectivity check
   useEffect(() => {
-    axios.get('https://insy7314-am-kikat.onrender.com/test')
+    axios.get('https://localhost:5000/test')
       .then(res => setTestMsg(res.data?.message ?? ''))
       .catch(() => {
         // fallback if localhost test fails

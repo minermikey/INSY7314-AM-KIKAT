@@ -46,14 +46,14 @@ export default function PaymentPage() {
 
     try {
       // Save payment to MongoDB
-      await axios.post('https://insy7314-am-kikat.onrender.com/api/payments', payload);
+      await axios.post('http://localhost:5000/api/payments', payload);
 
       // Always show clean success message
       setStatus('Payment Successful!');
       setStatusColor('green');
 
       // Request PayFast sandbox URL
-      const payfastRes = await axios.post('https://insy7314-am-kikat.onrender.com/payfast/create', {
+      const payfastRes = await axios.post('http://localhost:5000/payfast/create', {
         amount,
         item_name: 'CBA Payment',
         buyer_email: senderEmail,
@@ -71,7 +71,7 @@ export default function PaymentPage() {
       setSenderEmail('');
       setReceiverEmail('');
       setAmount('');
-      setCurrency('ZAR');
+      setCurrency('USD');
       setProvider('');
       setAccountInfo('');
       setSwiftCode('');

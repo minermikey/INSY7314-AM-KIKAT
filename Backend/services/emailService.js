@@ -1,11 +1,15 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
+// Render-friendly transporter
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,           // TLS port
+  secure: false,       // false for port 587
+  requireTLS: true,    // enforce TLS
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // App password from Gmail
+    pass: process.env.EMAIL_PASS,
   },
 });
 
@@ -31,7 +35,7 @@ async function sendTransactionEmails(senderEmail, receiverEmail, amount) {
     console.log('Emails sent successfully!');
   } catch (error) {
     console.error('Error sending emails:', error);
-    throw error; // Let your route handle this
+    throw error;
   }
 }
 

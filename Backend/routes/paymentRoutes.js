@@ -17,8 +17,8 @@ const transporter = nodemailer.createTransport({
   secure: false,
   requireTLS: true,
   auth: {
-    user: process.env.EMAIL_USER,      // your Gmail address
-    pass: process.env.EMAIL_PASS,      // Gmail App Password
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
@@ -37,6 +37,8 @@ function generateSignature(data) {
 // Create payment and send emails
 router.post('/create', async (req, res) => {
   try {
+    console.log('💡 Incoming payment request:', req.body);
+
     const { amount, item_name, senderEmail, receiverEmail } = req.body;
 
     // Validation
@@ -81,10 +83,11 @@ router.post('/create', async (req, res) => {
     res.json({ url: pfUrl });
 
   } catch (err) {
-    console.error('Full payment error:', err);  // FULL error log
+    console.error('💥 Payment route error:', err.stack || err);
     res.status(500).json({ 
       message: 'Failed to process payment.', 
-      error: err.toString() 
+      error: err.toString(),
+      stack: err.stack
     });
   }
 });

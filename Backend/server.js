@@ -39,9 +39,13 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('Global error:', err);
-  res.status(500).json({ error: err.message });
+  console.error('💥 Global error:', err.stack || err);
+  res.status(500).json({ 
+    error: err.message,
+    stack: err.stack // for debugging
+  });
 });
+
 
 // Start server
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

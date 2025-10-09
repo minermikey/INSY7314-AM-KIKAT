@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Payment = require('../models/Payment');
-const { sendTransactionEmails } = require('../services/emailService'); // Resend version
+const sendTransactionEmails = require('../services/emailService');
 
 router.post('/', async (req, res) => {
   try {
@@ -38,13 +38,13 @@ router.post('/', async (req, res) => {
     // Save to DB
     await payment.save();
 
-    // Send transaction emails via Resend
+    // Send test emails (logs only)
     await sendTransactionEmails(senderEmail, receiverEmail, `${currency} ${amount}`);
 
-    res.status(200).json({ message: 'Payment processed and emails sent successfully.' });
+    res.status(200).json({ message: 'Payment processed (TEST MODE). Emails logged to console.' });
   } catch (error) {
     console.error('Payment error:', error);
-    res.status(500).json({ message: 'Failed to process payment.', error: error.message });
+    res.status(500).json({ message: 'Failed to process payment (TEST MODE).' });
   }
 });
 

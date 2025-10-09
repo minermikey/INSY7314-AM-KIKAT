@@ -1,38 +1,42 @@
-const nodemailer = require('nodemailer');
-require('dotenv').config();
+// emailService.js
+import { Resend } from 'resend';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // App password from Gmail
-  },
-});
+// Initialize Resend client
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-async function sendTransactionEmails(senderEmail, receiverEmail, amount) {
+/**
+ * Sends transaction emails to both sender and receiver.
+ * @param {string} senderEmail - Sender's email address
+ * @param {string} receiverEmail - Receiver's email address
+ * @param {number|string} amount - Transaction amount
+ */
+export async function sendTransactionEmails(senderEmail, receiverEmail, amount) {
   try {
+    // Email to sender
     const senderMail = {
-      from: process.env.EMAIL_USER,
+      from: 'onboarding@resend.dev', // Default sender for testing
       to: senderEmail,
       subject: 'Payment Sent Confirmation',
-      text: `You have successfully sent ${amount} to ${receiverEmail}.`,
+      html: `<p>You have successfully sent <strong>${amount}</strong> to <strong>${receiverEmail}</strong>.</p>`,
     };
 
+    // Email to receiver
     const receiverMail = {
-      from: process.env.EMAIL_USER,
+      from: 'onboarding@resend.dev',
       to: receiverEmail,
       subject: 'Payment Received Notification',
-      text: `You have received ${amount} from ${senderEmail}.`,
+      html: `<p>You have received <strong>${amount}</strong> from <strong>${senderEmail}</strong>.</p>`,
     };
 
-    await transporter.sendMail(senderMail);
-    await transporter.sendMail(receiverMail);
+    // Send both emails
+    await resend.emails.send(senderMail);
+    await resend.emails.send(receiverMail);
 
-    console.log('Emails sent successfully!');
+    console.log('✅ Transaction emails sent successfully!');
   } catch (error) {
-    console.error('Error sending emails:', error);
+    console.error('❌ Error sending transaction emails:', error);
     throw error; // Let your route handle this
   }
 }
-
-module.exports = sendTransactionEmails;

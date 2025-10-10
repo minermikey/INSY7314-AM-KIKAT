@@ -3,18 +3,11 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 const fs = require('fs');
 const https = require('https');
-=======
+
 const helmet = require('helmet');
 
->>>>>>> Stashed changes
-=======
-const helmet = require('helmet');
-
->>>>>>> Stashed changes
 
 const paymentRoutes = require('./routes/paymentRoutes');
 const payfastRoutes = require('./routes/payfast');

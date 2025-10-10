@@ -1,16 +1,20 @@
 // Backend/server.js
-import dotenv from "dotenv";
-import express from "express";
-import mongoose from "mongoose";
-import cors from "cors";
-import helmet from "helmet";
-import https from "https";
-import fs from "fs";
+require("dotenv").config();
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const helmet = require("helmet");
+const https = require("https");
+const fs = require("fs");
 
-import paymentRoutes from "./routes/paymentRoutes.js";
-import payfastRoutes from "./routes/payfast.js";
-import authRoutes from "./routes/authRoutes.js";
-import generalLimiter from "./middleware/rateLimiter.js";
+
+const helmet = require('helmet');
+
+
+const paymentRoutes = require('./routes/paymentRoutes');
+// const payfastRoutes = require('./routes/payfast');
+const authRoutes = require("./routes/authRoutes"); 
+const generalLimiter = require('./middleware/rateLimiter');
 
 dotenv.config();
 
@@ -78,7 +82,10 @@ app.use(
 // ⚙️ Rate Limiting
 app.use(generalLimiter);
 
-// 📦 Routes
+
+// Routes
+app.use('/api/payments', paymentRoutes);
+// app.use('/api/payfast', payfastRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/payfast", payfastRoutes);

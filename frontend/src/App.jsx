@@ -1,3 +1,4 @@
+// frontend/src/App.jsx
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';

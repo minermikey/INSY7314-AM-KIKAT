@@ -1,3 +1,4 @@
+// frontend/src/navigation/AppNavigator.jsx
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomePage from '../pages/HomePage.jsx';
 import PaymentPage from '../pages/PaymentPage.jsx';

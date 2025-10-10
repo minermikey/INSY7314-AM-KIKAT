@@ -1,3 +1,4 @@
+// frontend/src/pages/Login.jsx
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -20,19 +21,15 @@ export default function Login({ onLogin }) {
     const payload = { username, accountNumber, password };
 
     try {
-      const res = await axios.post('/api/auth/login', payload);
+      const res = await axios.post('http://localhost:5000/api/auth/login', payload);
       const user = res.data?.user ?? { username, accountNumber };
       onLogin(user);
+        // Save to localStorage for session persistence
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        setStatus("Login successful");
       nav('/payments');
     } catch (err) {
-      // fallback to localStorage demo auth
-      const users = JSON.parse(localStorage.getItem('demoUsers') || '[]');
-      const found = users.find(u => u.username === username && u.accountNumber === accountNumber && u.password === password);
-      if (found) {
-        onLogin({ username: found.username, accountNumber: found.accountNumber, firstName: found.firstName });
-        nav('/payments');
-        return;
-      }
+            console.error("Login error:", err);
       setStatus('Login failed');
     }
   };

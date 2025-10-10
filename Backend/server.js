@@ -1,15 +1,11 @@
 // Backend/server.js
-require("dotenv").config();
+const dotenv = require("dotenv");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
 const https = require("https");
 const fs = require("fs");
-
-
-const helmet = require('helmet');
-
 
 const paymentRoutes = require('./routes/paymentRoutes');
 // const payfastRoutes = require('./routes/payfast');
@@ -88,7 +84,7 @@ app.use('/api/payments', paymentRoutes);
 // app.use('/api/payfast', payfastRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/payments", paymentRoutes);
-app.use("/api/payfast", payfastRoutes);
+//app.use("/api/payfast", payfastRoutes);
 
 // 🧠 Test endpoint
 app.get("/test", (req, res) => res.json({ message: "✅ Backend is running!" }));

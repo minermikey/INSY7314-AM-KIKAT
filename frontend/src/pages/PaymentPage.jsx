@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 export default function PaymentPage() {
-const [senderEmail, setSenderEmail] = useState('');
+  const [senderEmail, setSenderEmail] = useState('');
   const [receiverEmail, setReceiverEmail] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('USD'); // default currency
@@ -25,32 +25,25 @@ const [senderEmail, setSenderEmail] = useState('');
   const startProgress = () => {
     setProgress(6);
     progressRef.current = setInterval(() => {
-      setProgress(p => {
-        // increase gradually up to 90% while loading
-        const next = Math.min(90, p + Math.floor(Math.random() * 8) + 4);
-        return next;
-      });
+      setProgress(p => Math.min(90, p + Math.floor(Math.random() * 8) + 4));
     }, 300);
   };
 
   const stopProgress = (final = 100) => {
-    if (progressRef.current) {
-      clearInterval(progressRef.current);
-      progressRef.current = null;
-    }
+    if (progressRef.current) clearInterval(progressRef.current);
+    progressRef.current = null;
     setProgress(final);
-    // hide after a short delay
     setTimeout(() => setProgress(0), 600);
   };
 
   const submitPayment = async (e) => {
     e.preventDefault();
-
-    if(loading) return; // prevent multiple submissions
+    if (loading) return;
 
     setStatus('');
     setStatusColor('');
 
+    // frontend validation
     if (!senderEmail || !receiverEmail || !amount || !currency || !provider || !accountInfo || !swiftCode) {
       setStatus('All fields are required.');
       setStatusColor('red');
@@ -64,41 +57,27 @@ const [senderEmail, setSenderEmail] = useState('');
       return;
     }
 
-    const payload = {
-      amount,
-      currency,
-      provider,
-      accountInfo,
-      swiftCode,
-      senderEmail,
-      receiverEmail
-    };
+    const payload = { senderEmail, receiverEmail, amount, currency, provider, accountInfo, swiftCode };
 
     try {
-
       setLoading(true);
       startProgress();
 
-      // Save payment to MongoDB
       const res = await axios.post('https://localhost:5000/api/payments', payload);
 
       stopProgress(100);
-      setStatus(res.data?.message ?? 'Payment recorded');
+      setStatus(res.data?.message || 'Payment recorded');
       setStatusColor('green');
 
-
-      // short pause so progress bar reaches 100% before navigating
-      setTimeout(() => {
-        nav('/payment-success', { state: payload });
-      }, 400);
+      setTimeout(() => nav('/payment-success', { state: payload }), 400);
     } catch (err) {
-      console.error("Payment error:", err.response?.data || err.message || err);
       stopProgress(100);
-      setStatus('Failed to process payment.');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to process payment';
+      console.error("Payment error:", errorMessage);
+      setStatus(errorMessage);
       setStatusColor('red');
     } finally {
       setLoading(false);
-      // reset fields only after navigation/redirect in success flow; keep here for safety
       setSenderEmail('');
       setReceiverEmail('');
       setAmount('');
@@ -125,98 +104,40 @@ const [senderEmail, setSenderEmail] = useState('');
         </p>
 
         <form onSubmit={submitPayment} style={{ display: 'grid', gap: 14, width: '100%' }}>
-          <input
-            className="form-control"
-            type="email"
-            placeholder="Sender Email"
-            value={senderEmail}
-            onChange={(e) => setSenderEmail(e.target.value)}
-            disabled={loading}
-          />
-
-          <input
-            className="form-control"
-            type="email"
-            placeholder="Receiver Email"
-            value={receiverEmail}
-            onChange={(e) => setReceiverEmail(e.target.value)}
-            disabled={loading}
-          />
-
-          <input
-            className="form-control"
-            type="number"
-            placeholder="Amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            disabled={loading}
-          />
-
-          <select
-            className="form-control"
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-            disabled={loading}
-          >
-            {currencies.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
+          <input className="form-control" type="email" placeholder="Sender Email"
+            value={senderEmail} onChange={(e) => setSenderEmail(e.target.value)} disabled={loading} />
+          <input className="form-control" type="email" placeholder="Receiver Email"
+            value={receiverEmail} onChange={(e) => setReceiverEmail(e.target.value)} disabled={loading} />
+          <input className="form-control" type="number" placeholder="Amount"
+            value={amount} onChange={(e) => setAmount(e.target.value)} disabled={loading} />
+          <select className="form-control" value={currency} onChange={(e) => setCurrency(e.target.value)} disabled={loading}>
+            {currencies.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
+          <input className="form-control" placeholder="Provider (SWIFT)"
+            value={provider} onChange={(e) => setProvider(e.target.value)} disabled={loading} />
+          <input className="form-control" placeholder="Account Information"
+            value={accountInfo} onChange={(e) => setAccountInfo(e.target.value)} disabled={loading} />
+          <input className="form-control" placeholder="SWIFT Code"
+            value={swiftCode} onChange={(e) => setSwiftCode(e.target.value)} disabled={loading} />
 
-          <input
-            className="form-control"
-            placeholder="Provider (SWIFT)"
-            value={provider}
-            onChange={(e) => setProvider(e.target.value)}
-            disabled={loading}
-          />
-
-          <input
-            className="form-control"
-            placeholder="Account Information"
-            value={accountInfo}
-            onChange={(e) => setAccountInfo(e.target.value)}
-            disabled={loading}
-          />
-
-          <input
-            className="form-control"
-            placeholder="SWIFT Code"
-            value={swiftCode}
-            onChange={(e) => setSwiftCode(e.target.value)}
-            disabled={loading}
-          />
-
-          {/* progress bar */}
           {progress > 0 && (
             <div className="progress" style={{ height: 10, marginTop: 8 }}>
-              <div
-                className={`progress-bar progress-bar-striped ${loading ? 'progress-bar-animated' : ''}`}
+              <div className={`progress-bar progress-bar-striped ${loading ? 'progress-bar-animated' : ''}`}
                 role="progressbar"
                 style={{ width: `${progress}%` }}
                 aria-valuenow={progress}
                 aria-valuemin="0"
-                aria-valuemax="100"
-              />
+                aria-valuemax="100" />
             </div>
           )}
 
           <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
-            <button
-              className="btn btn-primary btn-lg"
-              style={{ flex: 1, fontSize: 18 }}
-              type="submit"
-              disabled={loading}
-            >
+            <button className="btn btn-primary btn-lg" style={{ flex: 1, fontSize: 18 }} type="submit" disabled={loading}>
               {loading ? 'Processing...' : 'Pay Now'}
             </button>
           </div>
 
-          {status && (
-            <div style={{ color: statusColor, fontSize: 16, marginTop: 8 }}>
-              {status}
-            </div>
-          )}
+          {status && <div style={{ color: statusColor, fontSize: 16, marginTop: 8 }}>{status}</div>}
         </form>
       </div>
     </div>

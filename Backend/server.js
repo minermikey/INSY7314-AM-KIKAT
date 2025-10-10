@@ -4,14 +4,14 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-
-
 const paymentRoutes = require('./routes/paymentRoutes');
 const payfastRoutes = require('./routes/payfast');
 const authRoutes = require("./routes/authRoutes"); 
 
 const PORT = process.env.PORT || 5000;
 const app = express();
+app.use(express.json());
+app.use(cors());
 
 // Middleware
 app.use(cors({
@@ -26,7 +26,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Routes
 app.use('/api/payments', paymentRoutes);
-app.use('/payfast', payfastRoutes);
+app.use('/api/payfast', payfastRoutes);
 app.use("/api/auth", authRoutes);
 
 app.get('/test', (req, res) => res.json({ message: 'Backend is running!' }));

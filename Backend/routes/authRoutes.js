@@ -3,6 +3,20 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const rateLimit = require("express-rate-limit"); // ✅ import here
+
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 5, // only 5 login attempts per IP per 15 minutes
+  message: {
+    status: 429,
+    message: 'Too many login attempts. Please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 
 // 🟢 Register Route
 router.post("/register", async (req, res) => {
@@ -62,7 +76,7 @@ router.post("/register", async (req, res) => {
 });
 
 // 🟡 Login Route
-router.post("/login", async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { username, accountNumber, password } = req.body;
 

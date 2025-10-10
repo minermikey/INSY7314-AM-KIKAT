@@ -3,6 +3,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const fs = require('fs');
+const https = require('https');
 
 
 
@@ -11,6 +13,15 @@ const payfastRoutes = require('./routes/payfast');
 const authRoutes = require("./routes/authRoutes"); 
 
 const PORT = process.env.PORT || 5000;
+
+const cert = process.env.SSL_CERT
+const key = process.env.SSL_KEY
+
+const options = {
+  key: key,
+  cert: cert,
+};
+
 const app = express();
 
 // Middleware
@@ -32,4 +43,6 @@ app.use("/api/auth", authRoutes);
 app.get('/test', (req, res) => res.json({ message: 'Backend is running!' }));
 
 // Start server
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+https.createServer(options, app).listen(PORT, () => {
+  console.log(`Secure API running at https://localhost:${PORT}`);
+});

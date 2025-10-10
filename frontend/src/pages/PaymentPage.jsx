@@ -54,7 +54,7 @@ export default function PaymentPage() {
       setStatusColor('green');
 
       // Request PayFast sandbox URL
-      const payfastRes = await axios.post('http://localhost:5000/payfast/create', {
+      const payfastRes = await axios.post('http://localhost:5000/api/payfast/create', {
         amount,
         item_name: 'CBA Payment',
         buyer_email: senderEmail,
@@ -77,7 +77,7 @@ export default function PaymentPage() {
       setAccountInfo('');
       setSwiftCode('');
     } catch (err) {
-        console.error("Payment error:", error.response?.data || error.message || error);
+        console.error("Payment error:", err.response?.data || err.message || err);
         setStatus('Failed to process payment.');
         setStatusColor('red');
     }

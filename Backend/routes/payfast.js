@@ -33,15 +33,15 @@ router.post('/create', async (req, res) => {
     }
 
     const data = {
-      merchant_id: PF_MERCHANT_ID,
-      merchant_key: PF_MERCHANT_KEY,
-      return_url: 'https://sandbox.payfast.co.za/eng/process/success',
-      cancel_url: 'https://sandbox.payfast.co.za/eng/process/cancel',
-      notify_url: 'https://sandbox.payfast.co.za/eng/process/notify',
-      amount: parseFloat(amount).toFixed(2),
-      item_name,
-      email_address: buyer_email,
-      m_payment_id: 'TEST-' + Date.now(),
+    merchant_id: PF_MERCHANT_ID,
+    merchant_key: PF_MERCHANT_KEY,
+     return_url: 'http://localhost:5173/payment-success',  // ✅ your frontend
+  cancel_url: 'http://localhost:5173/payment-cancel',   // ✅ your frontend
+  notify_url: 'http://localhost:5000/api/payfast/notify', // ✅ your backend for server notification
+    amount: parseFloat(amount).toFixed(2),
+    item_name,
+    email_address: buyer_email,
+    m_payment_id: 'TEST-' + Date.now(),
     };
 
     const signature = generateSignature(data);
@@ -53,11 +53,12 @@ router.post('/create', async (req, res) => {
       Object.entries(data)
         .map(([key, val]) => `${key}=${encodeURIComponent(val)}`)
         .join('&');
-
+console.log('Generated PayFast URL:', pfUrl);
     return res.json({
       message: 'PayFast sandbox link generated successfully.',
       url: pfUrl,
     });
+    
   } catch (err) {
     console.error('PayFast error:', err);
 
@@ -79,7 +80,21 @@ router.post('/create', async (req, res) => {
     }
 
     res.status(500).json({ message: 'Payment failed, email sent.' });
+    console.log('Generated PayFast URL:', pfUrl);
   }
 });
+
+function generateSignature(data) {
+  const sortedKeys = Object.keys(data).sort();
+  const queryString = sortedKeys
+    .map((key) => `${key}=${encodeURIComponent(data[key]).replace(/%20/g, '+')}`)
+    .join('&');
+
+  const fullString = PF_PASSPHRASE
+    ? `${queryString}&passphrase=${encodeURIComponent(PF_PASSPHRASE)}`
+    : queryString;
+
+  return crypto.createHash('md5').update(fullString).digest('hex');
+}
 
 module.exports = router;

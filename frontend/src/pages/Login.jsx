@@ -21,7 +21,7 @@ export default function Login({ onLogin }) {
     const payload = { username, accountNumber, password };
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', payload);
+      const res = await axios.post('https://localhost:5000/api/auth/login', payload);
       const user = res.data?.user ?? { username, accountNumber };
       onLogin(user);
         // Save to localStorage for session persistence

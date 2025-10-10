@@ -1,3 +1,4 @@
+// frontend/src/components/PayFastButton.jsx
 import React from 'react';
 
 export default function PayFastButton() {

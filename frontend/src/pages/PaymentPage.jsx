@@ -1,3 +1,4 @@
+// frontend/src/pages/PaymentPage.jsx
 import { useState } from 'react';
 import axios from 'axios';
 
@@ -76,9 +77,9 @@ export default function PaymentPage() {
       setAccountInfo('');
       setSwiftCode('');
     } catch (err) {
-      console.error(err.response?.data || err.message);
-      setStatus('Failed to process payment.');
-      setStatusColor('red');
+        console.error("Payment error:", error.response?.data || error.message || error);
+        setStatus('Failed to process payment.');
+        setStatusColor('red');
     }
   };
 

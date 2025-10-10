@@ -10,7 +10,7 @@ const helmet = require('helmet');
 
 
 const paymentRoutes = require('./routes/paymentRoutes');
-const payfastRoutes = require('./routes/payfast');
+// const payfastRoutes = require('./routes/payfast');
 const authRoutes = require("./routes/authRoutes"); 
 const generalLimiter = require('./middleware/rateLimiter');
 
@@ -47,7 +47,7 @@ app.use(generalLimiter);
 
 // Routes
 app.use('/api/payments', paymentRoutes);
-app.use('/api/payfast', payfastRoutes);
+// app.use('/api/payfast', payfastRoutes);
 app.use("/api/auth", authRoutes);
 
 app.get('/test', (req, res) => res.json({ message: 'Backend is running!' }));

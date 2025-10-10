@@ -1,31 +1,121 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/reference/configuration-reference
+# This CircleCI configuration defines a Continuous Integration (CI) pipeline
+# that runs automated linting, testing, and Docker image builds for the project.
+# It uses version 2.1 (latest stable schema).
+
 version: 2.1
 
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/guides/orchestrate/jobs-steps/#jobs-overview & https://circleci.com/docs/reference/configuration-reference/#jobs
 jobs:
-  say-hello:
-    # Specify the execution environment. You can specify an image from Docker Hub or use one of our convenience images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/guides/execution-managed/executor-intro/ & https://circleci.com/docs/reference/configuration-reference/#executor-job
+  # -------------------------------
+  # JOB 1: BUILD AND TEST
+  # -------------------------------
+  build-and-test:
+    # Specify the environment CircleCI will use - Node.js 22 on Linux (Docker image)
     docker:
-      # Specify the version you desire here
-      # See: https://circleci.com/developer/images/image/cimg/base
-      - image: cimg/base:current
+      - image: cimg/node:22.8
 
-    # Add steps to the job
-    # See: https://circleci.com/docs/guides/orchestrate/jobs-steps/#steps-overview & https://circleci.com/docs/reference/configuration-reference/#steps
     steps:
-      # Checkout the code as the first step.
+      # Step 1: Pull the repository’s source code into the container
       - checkout
-      - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
 
-# Orchestrate jobs using workflows
-# See: https://circleci.com/docs/guides/orchestrate/workflows/ & https://circleci.com/docs/reference/configuration-reference/#workflows
+      # Step 2: Display the current directory and confirm the folder structure.
+      # This helps verify the backend folder exists and files are in the expected place.
+      - run:
+          name: Show repo structure
+          command: |
+            pwd
+            ls -la
+            echo "---- Backend dir ----"
+            ls -la Backend || true
+
+      # Step 3: Restore previously cached dependencies to speed up builds.
+      # The checksum ensures cache invalidation if the package-lock.json file changes.
+      - restore_cache:
+          keys:
+            - node-deps-{{ checksum "Backend/package-lock.json" }}
+            - node-deps-
+
+      # Step 4: Install all backend dependencies (including dev tools like Jest & ESLint)
+      # Using `npm ci` ensures a clean, reproducible install from package-lock.json.
+      - run:
+          name: Install Dependencies (include dev)
+          command: cd Backend && npm ci --include=dev
+
+      # Step 5: Save dependencies into CircleCI’s cache for future runs.
+      # This avoids reinstalling all packages from scratch next time.
+      - save_cache:
+          key: node-deps-{{ checksum "Backend/package-lock.json" }}
+          paths:
+            - ~/.npm
+
+      # Step 6: Run ESLint to check code quality and style consistency.
+      # The `|| true` prevents lint errors from failing the build - useful during setup.
+      - run:
+          name: Run ESLint
+          command: cd Backend && npx eslint . --ext .js,.jsx,.ts,.tsx || true
+
+      # Step 7: Run Jest unit tests.
+      # `--ci` ensures consistent output for CI environments.
+      # `--passWithNoTests` prevents the pipeline from failing if no test files exist yet.
+      - run:
+          name: Run Jest Tests (pass if no tests yet)
+          command: |
+            cd Backend
+            NODE_ENV=test npx jest --runInBand --ci --reporters=default --passWithNoTests
+
+
+  # -------------------------------
+  # JOB 2: DOCKER BUILD
+  # -------------------------------
+  docker-build:
+    docker:
+      - image: cimg/node:22.8
+    steps:
+      # Step 1: Pull the latest version of the repository.
+      - checkout
+
+      # Step 2: Enable Docker-in-Docker so we can build container images inside CircleCI.
+      - setup_remote_docker:
+          docker_layer_caching: true  # speeds up subsequent Docker builds
+
+      # Step 3: Build the backend’s Docker image - but only if a Dockerfile exists.
+      # This prevents failures on branches that don’t contain Dockerfiles (like setup branches).
+      - run:
+          name: Build Docker image if Dockerfile exists
+          command: |
+            set -e  # Exit immediately if a command fails
+            cd Backend
+
+            # Check for Dockerfile or Dockerfile.dev, and build accordingly
+            if [ -f Dockerfile ]; then
+              echo "Found Dockerfile"; docker build -t secureblog-api .
+            elif [ -f Dockerfile.dev ]; then
+              echo "Found Dockerfile.dev"; docker build -f Dockerfile.dev -t secureblog-api .
+            else
+              echo "No Dockerfile in this branch. Skipping Docker build."
+              exit 0
+            fi
+
+            # Display all images to confirm the build succeeded
+            docker image ls | grep secureblog-api || true
+
+
+# -------------------------------
+# WORKFLOW CONFIGURATION
+# -------------------------------
 workflows:
-  say-hello-workflow: # This is the name of the workflow, feel free to change it to better match your workflow.
-    # Inside the workflow, you define the jobs you want to run.
+  version: 2.1  # Workflow syntax version (keep 2.1 for current CircleCI)
+  ci-pipeline:
     jobs:
-      - say-hello
+      # Run the build-and-test job first (always runs on every branch)
+      - build-and-test
+
+      # Run the Docker build only after the build-and-test job passes.
+      # The branch filter ensures Docker builds run only on the main branch,
+      # since that’s where your Dockerfiles exist.
+      - docker-build:
+          requires:
+            - build-and-test
+          filters:
+            branches:
+              only:
+                - main  # Only build/push Docker on main

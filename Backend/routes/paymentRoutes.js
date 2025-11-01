@@ -1,145 +1,118 @@
-// frontend/src/pages/PaymentPage.jsx
-import { useState, useRef } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+// Backend/routes/paymentRoutes.js
+const express = require('express');
+const router = express.Router();
+const Payment = require('../models/Payment');
+const sendTransactionEmails = require('../services/emailService');
 
-export default function PaymentPage() {
-  const [senderEmail, setSenderEmail] = useState('');
-  const [receiverEmail, setReceiverEmail] = useState('');
-  const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState('USD'); // default currency
-  const [provider, setProvider] = useState('');
-  const [accountInfo, setAccountInfo] = useState('');
-  const [swiftCode, setSwiftCode] = useState('');
-  const [status, setStatus] = useState('');
-  const [statusColor, setStatusColor] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const progressRef = useRef(null);
-  const nav = useNavigate();
+// XSS sanitization and regex whitelisting
+const xss = require("xss");
+const sanitize = (str) => (typeof str === "string" ? xss(str.trim()) : str);
 
-  const currencies = [
-    'USD','EUR','GBP','AUD','CAD','ZAR','JPY','CNY','INR','NZD','CHF','SGD','HKD'
-  ];
+// whitelist regex patterns
+const whitelistPatterns = {
+  username: /^[a-zA-Z0-9_ ]{3,30}$/, // letters, numbers, underscore, space
+  accountNumber: /^[0-9]{6,20}$/, // digits only
+  amount: /^[0-9]+(\.[0-9]{1,2})?$/, // allows 100 or 100.00
+  currency: /^[A-Z]{3}$/, // 3-letter ISO currency (USD, ZAR, EUR)
+  provider: /^[a-zA-Z0-9\s\-]{2,50}$/, // e.g., PayPal, FNB, etc.
+  accountInfo: /^[a-zA-Z0-9\s,.'\-]{3,100}$/, // address/account name
+  swiftCode: /^[A-Z0-9]{8,11}$/, // standard SWIFT/BIC code
+  senderEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // basic email
+  receiverEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // basic email
+};
 
-  const startProgress = () => {
-    setProgress(6);
-    progressRef.current = setInterval(() => {
-      setProgress(p => Math.min(90, p + Math.floor(Math.random() * 8) + 4));
-    }, 300);
-  };
-
-  const stopProgress = (final = 100) => {
-    if (progressRef.current) clearInterval(progressRef.current);
-    progressRef.current = null;
-    setProgress(final);
-    setTimeout(() => setProgress(0), 600);
-  };
-
-  const submitPayment = async (e) => {
-    e.preventDefault();
-    if (loading) return;
-
-    setStatus('');
-    setStatusColor('');
-
-    // frontend validation
-    if (!senderEmail || !receiverEmail || !amount || !currency || !provider || !accountInfo || !swiftCode) {
-      setStatus('All fields are required.');
-      setStatusColor('red');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(senderEmail) || !emailRegex.test(receiverEmail)) {
-      setStatus('Please enter valid email addresses.');
-      setStatusColor('red');
-      return;
-    }
-
-    const payload = { senderEmail, receiverEmail, amount, currency, provider, accountInfo, swiftCode };
-
-    try {
-      setLoading(true);
-      startProgress();
-
-      const res = await axios.post('https://localhost:5000/api/payments', payload);
-
-      stopProgress(100);
-      setStatus(res.data?.message || 'Payment recorded');
-      setStatusColor('green');
-
-      setTimeout(() => nav('/payment-success', { state: payload }), 400);
-    } catch (err) {
-      stopProgress(100);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to process payment';
-      console.error("Payment error:", errorMessage);
-      setStatus(errorMessage);
-      setStatusColor('red');
-    } finally {
-      setLoading(false);
-      setSenderEmail('');
-      setReceiverEmail('');
-      setAmount('');
-      setCurrency('USD');
-      setProvider('');
-      setAccountInfo('');
-      setSwiftCode('');
-    }
-  };
-
-  return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: 32, gap: 24 }}>
-      <div style={{
-        width: '100%',
-        maxWidth: 900,
-        background: 'rgba(255,255,255,0.92)',
-        padding: 28,
-        borderRadius: 10,
-        boxShadow: '0 6px 20px rgba(0,0,0,0.08)'
-      }}>
-        <h3 style={{ margin: 4, fontSize: 26 }}>International Payment</h3>
-        <p style={{ marginTop: 8, marginBottom: 18, color: '#555' }}>
-          Enter the payment details below to complete your transaction.
-        </p>
-
-        <form onSubmit={submitPayment} style={{ display: 'grid', gap: 14, width: '100%' }}>
-          <input className="form-control" type="email" placeholder="Sender Email"
-            value={senderEmail} onChange={(e) => setSenderEmail(e.target.value)} disabled={loading} />
-          <input className="form-control" type="email" placeholder="Receiver Email"
-            value={receiverEmail} onChange={(e) => setReceiverEmail(e.target.value)} disabled={loading} />
-          <input className="form-control" type="number" placeholder="Amount"
-            value={amount} onChange={(e) => setAmount(e.target.value)} disabled={loading} />
-          <select className="form-control" value={currency} onChange={(e) => setCurrency(e.target.value)} disabled={loading}>
-            {currencies.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <input className="form-control" placeholder="Provider (SWIFT)"
-            value={provider} onChange={(e) => setProvider(e.target.value)} disabled={loading} />
-          <input className="form-control" placeholder="Account Information"
-            value={accountInfo} onChange={(e) => setAccountInfo(e.target.value)} disabled={loading} />
-          <input className="form-control" placeholder="SWIFT Code"
-            value={swiftCode} onChange={(e) => setSwiftCode(e.target.value)} disabled={loading} />
-
-          {progress > 0 && (
-            <div className="progress" style={{ height: 10, marginTop: 8 }}>
-              <div className={`progress-bar progress-bar-striped ${loading ? 'progress-bar-animated' : ''}`}
-                role="progressbar"
-                style={{ width: `${progress}%` }}
-                aria-valuenow={progress}
-                aria-valuemin="0"
-                aria-valuemax="100" />
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
-            <button className="btn btn-primary btn-lg" style={{ flex: 1, fontSize: 18 }} type="submit" disabled={loading}>
-              {loading ? 'Processing...' : 'Pay Now'}
-            </button>
-          </div>
-
-          {status && <div style={{ color: statusColor, fontSize: 16, marginTop: 8 }}>{status}</div>}
-        </form>
-      </div>
-    </div>
-  );
+// test regex whitelist
+function validateWhitelist(field, value) {
+  const pattern = whitelistPatterns[field];
+  return pattern ? pattern.test(value) : true;
 }
+
+// 🟢 Payment Route
+router.post('/', async (req, res) => {
+  try {
+    const {
+      username,
+      accountNumber,
+      amount,
+      currency,
+      provider,
+      accountInfo,
+      swiftCode,
+      senderEmail,
+      receiverEmail,
+    } = req.body;
+
+    // Sanitize all fields
+    const sanitized = {
+      username: sanitize(username),
+      accountNumber: sanitize(accountNumber),
+      amount: sanitize(amount),
+      currency: sanitize(currency),
+      provider: sanitize(provider),
+      accountInfo: sanitize(accountInfo),
+      swiftCode: sanitize(swiftCode),
+      senderEmail: sanitize(senderEmail),
+      receiverEmail: sanitize(receiverEmail),
+    };
+
+    
+    if (
+      ![
+        sanitized.amount,
+        sanitized.currency,
+        sanitized.provider,
+        sanitized.accountInfo,
+        sanitized.swiftCode,
+        sanitized.senderEmail,
+        sanitized.receiverEmail,
+      ].every(Boolean)
+    ) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // Regex whitelist validation
+    for (const [key, value] of Object.entries(sanitized)) {
+      if (value && !validateWhitelist(key, value)) {
+        return res.status(400).json({ message: `Invalid ${key} format` });
+      }
+    }
+
+    
+    const payment = new Payment({
+      username: sanitized.username || 'Test User',
+      accountNumber: sanitized.accountNumber || '12345678',
+      amount: sanitized.amount,
+      currency: sanitized.currency,
+      provider: sanitized.provider,
+      accountInfo: sanitized.accountInfo,
+      swiftCode: sanitized.swiftCode,
+      senderEmail: sanitized.senderEmail,
+      receiverEmail: sanitized.receiverEmail,
+    });
+
+    // Save to DB
+    await payment.save();
+
+    // Send test emails (logs only)
+    await sendTransactionEmails(
+      sanitized.senderEmail,
+      sanitized.receiverEmail,
+      `${sanitized.currency} ${sanitized.amount}`
+    );
+
+    res.status(200).json({
+      message: 'Payment processed (TEST MODE). Emails logged to console.',
+    });
+  } catch (error) {
+    console.error('Payment error:', error);
+    res
+      .status(500)
+      .json({ message: 'Failed to process payment. (TEST MODE).' });
+  }
+});
+
+module.exports = router;
+
+//ChatGPT. (2025) ChatGPT — Whitelisting with regex. 
+// Available at: https://chatgpt.com/share/68e9737f-31ac-800b-9c75-cab69c0eb737
+//(Accessed: 10 October 2025).

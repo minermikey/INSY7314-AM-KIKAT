@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-
+  
 export default function PaymentPage() {
   const [senderEmail, setSenderEmail] = useState('');
   const [receiverEmail, setReceiverEmail] = useState('');
@@ -17,6 +17,13 @@ export default function PaymentPage() {
   const [progress, setProgress] = useState(0);
   const progressRef = useRef(null);
   const nav = useNavigate();
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('currentUser')) || null;
+    } catch {
+      return null;
+    }
+  });
 
   const currencies = [
     'USD','EUR','GBP','AUD','CAD','ZAR','JPY','CNY','INR','NZD','CHF','SGD','HKD'
@@ -87,6 +94,14 @@ export default function PaymentPage() {
       setSwiftCode('');
     }
   };
+
+  if (!user) {
+    return (
+      <div style={{ padding: 32, textAlign: 'center' }}>
+        <h2>Please login to access the Payment Page.</h2>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: 32, gap: 24 }}>

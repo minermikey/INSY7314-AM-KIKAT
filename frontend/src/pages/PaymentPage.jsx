@@ -130,7 +130,7 @@ export default function PaymentPage() {
           </select>
           <input className="form-control" placeholder="Provider (SWIFT)"
             value={provider} onChange={(e) => setProvider(e.target.value)} disabled={loading} />
-          <input className="form-control" placeholder="Account Information"
+          <input className="form-control" placeholder="Account Information this is reciver info "
             value={accountInfo} onChange={(e) => setAccountInfo(e.target.value)} disabled={loading} />
           <input className="form-control" placeholder="SWIFT Code"
             value={swiftCode} onChange={(e) => setSwiftCode(e.target.value)} disabled={loading} />

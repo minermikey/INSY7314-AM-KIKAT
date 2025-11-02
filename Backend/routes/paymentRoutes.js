@@ -27,7 +27,7 @@ function validateWhitelist(field, value) {
   return pattern ? pattern.test(value) : true;
 }
 
-// 🟢 Payment Route
+// Payment Route
 router.post('/', async (req, res) => {
   try {
     const {

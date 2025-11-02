@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-const rateLimit = require("express-rate-limit"); // ✅ import here
+const rateLimit = require("express-rate-limit"); 
 
 
 const loginLimiter = rateLimit({
@@ -18,7 +18,7 @@ const loginLimiter = rateLimit({
 });
 
 
-// 🟢 Register Route
+// Register Route
 router.post("/register", async (req, res) => {
   try {
     const {
@@ -34,7 +34,7 @@ router.post("/register", async (req, res) => {
       address,
       city,
       postalCode,
-      role, // 👈 include role in destructuring
+      role, // include role in destructuring
     } = req.body;
 
     // Validate required fields
@@ -65,7 +65,7 @@ router.post("/register", async (req, res) => {
       address,
       city,
       postalCode,
-      role: role || "user", // 👈 fallback to "user" if undefined
+      role: role || "user", // fallback to "user" if undefined
     });
 
     await newUser.save();
@@ -81,7 +81,7 @@ router.post("/register", async (req, res) => {
 });
 
 
-// 🟡 Login Route
+// Login Route
 router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { username, accountNumber, password } = req.body;

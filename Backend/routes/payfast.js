@@ -35,9 +35,9 @@
 //     const data = {
 //     merchant_id: PF_MERCHANT_ID,
 //     merchant_key: PF_MERCHANT_KEY,
-//      return_url: 'http://localhost:5173/payment-success',  // ✅ your frontend
-//   cancel_url: 'http://localhost:5173/payment-cancel',   // ✅ your frontend
-//   notify_url: 'http://localhost:5000/api/payfast/notify', // ✅ your backend for server notification
+//      return_url: 'http://localhost:5173/payment-success',  // your frontend
+//   cancel_url: 'http://localhost:5173/payment-cancel',   // your frontend
+//   notify_url: 'http://localhost:5000/api/payfast/notify', // your backend for server notification
 //     amount: parseFloat(amount).toFixed(2),
 //     item_name,
 //     email_address: buyer_email,
@@ -74,7 +74,7 @@
 //         subject: 'Payment processing failed (PayFast)',
 //         text: `Error: ${err.message}`,
 //       });
-//       console.log('❗ Error email sent');
+//       console.log(' Error email sent');
 //     } catch (mailErr) {
 //       console.error('Email send error:', mailErr);
 //     }

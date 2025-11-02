@@ -10,6 +10,7 @@ const fs = require("fs");
 const paymentRoutes = require('./routes/paymentRoutes');
 // const payfastRoutes = require('./routes/payfast');
 const authRoutes = require("./routes/authRoutes"); 
+const employeePaymentsRoutes = require('./routes/employeePaymentsRoutes');
 const generalLimiter = require('./middleware/rateLimiter');
 
 dotenv.config();
@@ -84,7 +85,8 @@ app.use('/api/payments', paymentRoutes);
 // app.use('/api/payfast', payfastRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/payments", paymentRoutes);
-//app.use("/api/payfast", payfastRoutes);
+app.use('/api/employeepayments', employeePaymentsRoutes);
+
 
 // 🧠 Test endpoint
 app.get("/test", (req, res) => res.json({ message: "✅ Backend is running!" }));

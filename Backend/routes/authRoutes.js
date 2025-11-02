@@ -34,6 +34,7 @@ router.post("/register", async (req, res) => {
       address,
       city,
       postalCode,
+      role, // 👈 include role in destructuring
     } = req.body;
 
     // Validate required fields
@@ -50,7 +51,7 @@ router.post("/register", async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
+    // Create new user with default role if not provided
     const newUser = new User({
       firstName,
       lastName,
@@ -64,17 +65,21 @@ router.post("/register", async (req, res) => {
       address,
       city,
       postalCode,
-      role: "user"
+      role: role || "user", // 👈 fallback to "user" if undefined
     });
 
     await newUser.save();
 
-    res.status(201).json({ message: "User registered successfully", user: newUser });
+    res.status(201).json({
+      message: "User registered successfully",
+      user: newUser,
+    });
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({ message: "Server error during registration" });
   }
 });
+
 
 // 🟡 Login Route
 router.post('/login', loginLimiter, async (req, res) => {

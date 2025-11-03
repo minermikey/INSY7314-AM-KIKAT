@@ -42,6 +42,7 @@ export default function PaymentPage() {
     setTimeout(() => setProgress(0), 600);
   };
 
+  // Combined payment function
   const handlePayment = async (e) => {
     e.preventDefault();
     if (loading) return;
@@ -49,6 +50,7 @@ export default function PaymentPage() {
     setStatus('');
     setStatusColor('');
 
+    // frontend validation
     if (!senderEmail || !receiverEmail || !amount || !currency || !provider || !accountInfo || !swiftCode) {
       setStatus('All fields are required.');
       setStatusColor('red');
@@ -69,38 +71,27 @@ export default function PaymentPage() {
       startProgress();
 
       // 1️⃣ Submit regular payment
-      const res = await axios.post('http://localhost:5000/api/payments', payload);
+      const res = await axios.post('https://localhost:5000/api/payments', payload);
       setStatus(res.data?.message || 'Payment recorded');
       setStatusColor('green');
 
-      // 2️⃣ Initiate PayFast payment (fixed)
-      const payFastRes = await axios.post('http://localhost:5000/api/payfast/create', {
+      // 2️⃣ Then initiate PayFast payment
+      const payFastRes = await axios.post('https://localhost:5000/api/payfast/create', {
         amount,
         item_name: `Payment to ${receiverEmail}`,
         buyer_email: senderEmail,
       });
 
       if (payFastRes.data?.url) {
-        setStatus('Opening PayFast in a new tab...');
+        setStatus('Redirecting to PayFast...');
         setStatusColor('green');
-
-        // Open PayFast in new tab
         window.open(payFastRes.data.url, '_blank', 'noopener,noreferrer');
-
-        // Optional: clear form fields after opening PayFast
-        setSenderEmail('');
-        setReceiverEmail('');
-        setAmount('');
-        setCurrency('USD');
-        setProvider('');
-        setAccountInfo('');
-        setSwiftCode('');
       } else {
-        setStatus('Failed to get PayFast link.');
-        setStatusColor('red');
+        console.warn('No PayFast URL returned.');
       }
 
       stopProgress(100);
+      setTimeout(() => nav('/payment-success', { state: payload }), 400);
     } catch (err) {
       stopProgress(100);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to process payment';
@@ -109,6 +100,13 @@ export default function PaymentPage() {
       setStatusColor('red');
     } finally {
       setLoading(false);
+      setSenderEmail('');
+      setReceiverEmail('');
+      setAmount('');
+      setCurrency('USD');
+      setProvider('');
+      setAccountInfo('');
+      setSwiftCode('');
     }
   };
 

@@ -25,7 +25,7 @@ export default function Login({ onLogin }) {
       const user = res.data?.user ?? { username, accountNumber };
       onLogin(user);
         // Save to localStorage for session persistence
-        localStorage.setItem("user", JSON.stringify(res.data.user));
+        localStorage.setItem("currentUser", JSON.stringify(user));
         setStatus("Login successful");
       nav('/payments');
     } catch (err) {

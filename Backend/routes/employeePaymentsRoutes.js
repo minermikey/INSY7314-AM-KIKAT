@@ -80,6 +80,4 @@ router.post("/verify-account", async (req, res) => {
     }
 });
 
-
-
 module.exports = router;

@@ -3,19 +3,19 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-const rateLimit = require("express-rate-limit"); 
+//const rateLimit = require("express-rate-limit"); 
 
 
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
-  max: 5, // only 5 login attempts per IP per 15 minutes
-  message: {
-    status: 429,
-    message: 'Too many login attempts. Please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// const loginLimiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 min
+//   max: 5, // only 5 login attempts per IP per 15 minutes
+//   message: {
+//     status: 429,
+//     message: 'Too many login attempts. Please try again later.'
+//   },
+//   standardHeaders: true,
+//   legacyHeaders: false,
+// });
 
 
 // Register Route
@@ -82,7 +82,9 @@ router.post("/register", async (req, res) => {
 
 
 // Login Route
-router.post('/login', loginLimiter, async (req, res) => {
+router.post('/login', 
+  //loginLimiter
+  async (req, res) => {
   try {
     const { username, accountNumber, password } = req.body;
 
@@ -102,6 +104,10 @@ router.post('/login', loginLimiter, async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    if(user.role === null || user.role === undefined){
+      user.role = "user";
+    }
+    
     res.status(200).json({
       message: "Login successful",
       user: {
@@ -113,6 +119,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         accountNumber: user.accountNumber,
         idNumber: user.idNumber,
         phoneNumber: user.phoneNumber,
+        role: user.role
       },
     });
   } catch (error) {

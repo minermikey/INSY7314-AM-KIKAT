@@ -31,9 +31,10 @@ jobs:
       # Step 3: Install dependencies
       - name: Install dependencies
         run: npm install
-        working-directory: ./backend
+        working-directory: ./INSY7314-AM-KIKAT/Backend
 
       # Step 4: Run tests
       - name: Run tests
         run: npm test
-        working-directory: ./backend
+        working-directory: ./INSY7314-AM-KIKAT/Backend
+

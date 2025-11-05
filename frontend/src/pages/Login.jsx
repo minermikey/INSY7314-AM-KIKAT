@@ -11,10 +11,10 @@ export default function Login({ onLogin }) {
   const [status, setStatus] = useState('');
   const nav = useNavigate();
 
-  // ✅ Secret key (must match backend)
+  //  Secret key (must match backend)
   const SECRET_KEY = "YourStrongFrontendSecretKey123";
 
-  // ✅ Encrypt function
+  //  Encrypt function
   const encryptData = (data) => {
     return CryptoJS.AES.encrypt(data, SECRET_KEY).toString();
   };
@@ -28,11 +28,11 @@ export default function Login({ onLogin }) {
       return;
     }
 
-    console.log("🔐 Original password:", password);
+    console.log(" Original password:", password);
 
-    // ✅ Encrypt password before sending
+    //  Encrypt password before sending
     const encryptedPassword = encryptData(password);
-    console.log("🧩 Encrypted password:", encryptedPassword);
+    console.log(" Encrypted password:", encryptedPassword);
 
     const payload = { 
       username, 
@@ -40,18 +40,18 @@ export default function Login({ onLogin }) {
       password: encryptedPassword 
     };
 
-    console.log("📦 Payload being sent to server:", payload);
+    console.log(" Payload being sent to server:", payload);
 
     try {
       const res = await axios.post('https://localhost:5001/api/auth/login', payload);
-      console.log("✅ Server response:", res.data);
+      console.log(" Server response:", res.data);
 
       const user = res.data?.user ?? { username, accountNumber };
       onLogin(user);
 
       // Save to localStorage for session persistence
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      localStorage.setItem("token", res.data.token); // ✅ Store JWT token
+      localStorage.setItem("token", res.data.token); // Store JWT token
 
 
       setStatus("Login successful");
@@ -79,9 +79,7 @@ export default function Login({ onLogin }) {
         boxShadow: '0 6px 20px rgba(0,0,0,0.08)'
       }}>
         <h3 style={{ margin: 4, fontSize: 26 }}>Login</h3>
-        <p style={{ marginTop: 8, marginBottom: 18, color: '#555' }}>
-          Enter your username, account number and password.
-        </p>
+        <p style={{ marginTop: 8, marginBottom: 18, color: '#555' }}>Enter your username, account number and password.</p>
 
         <form onSubmit={submit} style={{ display: 'grid', gap: 14, width: '100%' }}>
           <section style={{ display: 'grid', gap: 10 }}>
@@ -112,13 +110,7 @@ export default function Login({ onLogin }) {
           </section>
 
           <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
-            <button 
-              className="btn btn-success btn-lg" 
-              style={{ flex: 1, fontSize: 18 }} 
-              type="submit"
-            >
-              Login
-            </button>
+            <button className="btn btn-success btn-lg" style={{ flex: 1, fontSize: 18 }} type="submit">Login</button>
           </div>
 
           {status && <div style={{ color: 'red', fontSize: 16 }}>{status}</div>}

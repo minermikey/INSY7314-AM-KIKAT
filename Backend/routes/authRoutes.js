@@ -2,11 +2,11 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken"); // ✅ Import JWT
+const jwt = require("jsonwebtoken"); // Import JWT
 const User = require("../models/User");
 const rateLimit = require("express-rate-limit");
 const CryptoJS = require("crypto-js");
-const SECRET_KEY = "YourStrongFrontendSecretKey123"; // ✅ Must match frontend AES key
+const SECRET_KEY = "YourStrongFrontendSecretKey123"; // Must match frontend AES key
 
 // 🕒 Rate limiter to prevent brute force login attempts
 const loginLimiter = rateLimit({
@@ -20,7 +20,19 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// 🟢 Register Route
+// const loginLimiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 min
+//   max: 5, // only 5 login attempts per IP per 15 minutes
+//   message: {
+//     status: 429,
+//     message: 'Too many login attempts. Please try again later.'
+//   },
+//   standardHeaders: true,
+//   legacyHeaders: false,
+// });
+
+
+// Register Route
 router.post("/register", async (req, res) => {
   try {
     const {
@@ -73,6 +85,7 @@ router.post("/register", async (req, res) => {
       address,
       city,
       postalCode,
+      role: role || "user", // fallback to "user" if undefined
     });
 
     await newUser.save();

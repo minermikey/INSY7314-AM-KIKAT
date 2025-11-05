@@ -27,7 +27,7 @@ function validateWhitelist(field, value) {
   return pattern ? pattern.test(value) : true;
 }
 
-// 🟢 Payment Route
+// Payment Route
 router.post('/', async (req, res) => {
   try {
     const {
@@ -88,6 +88,8 @@ router.post('/', async (req, res) => {
       swiftCode: sanitized.swiftCode,
       senderEmail: sanitized.senderEmail,
       receiverEmail: sanitized.receiverEmail,
+      verified: false,
+      reason: "New payment Unprocessed",
     });
 
     // Save to DB
@@ -101,7 +103,7 @@ router.post('/', async (req, res) => {
     );
 
     res.status(200).json({
-      message: 'Payment processed (TEST MODE). Emails logged to console.',
+      message: 'Payment submited (TEST MODE). Emails logged to console.',
     });
   } catch (error) {
     console.error('Payment error:', error);

@@ -3,33 +3,33 @@ name: .NET CI
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, Michaels-Encryption ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, Michaels-Encryption ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    # Step 1: Checkout the repository
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # Step 2: Setup .NET
-    - name: Setup .NET 8
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
+      # Step 2: Setup .NET
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
 
-    # Step 3: Restore dependencies
-    - name: Restore dependencies
-      run: dotnet restore
+      # Step 3: Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore ./Backend/MyProject.sln
 
-    # Step 4: Build the project
-    - name: Build project
-      run: dotnet build --configuration Release --no-restore
+      # Step 4: Build the project
+      - name: Build project
+        run: dotnet build ./Backend/MyProject.sln --configuration Release --no-restore
 
-    # Step 5: Run tests (optional)
-    - name: Run tests
-      run: dotnet test --no-build --verbosity normal
+      # Step 5: Run tests
+      - name: Run tests
+        run: dotnet test ./Backend/MyProject.sln --no-build --verbosity normal

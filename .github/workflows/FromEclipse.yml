@@ -1,4 +1,4 @@
-name: .NET CI
+name: Node.js CI
 
 on:
   workflow_dispatch:
@@ -16,20 +16,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Setup .NET
-      - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
+      # Step 2: Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          dotnet-version: 8.0.x
+          node-version: '20.x'
 
-      # Step 3: Restore dependencies
-      - name: Restore dependencies
-        run: dotnet restore ./Backend/MyProject.sln
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
 
-      # Step 4: Build the project
-      - name: Build project
-        run: dotnet build ./Backend/MyProject.sln --configuration Release --no-restore
-
-      # Step 5: Run tests
+      # Step 4: Run tests
       - name: Run tests
-        run: dotnet test ./Backend/MyProject.sln --no-build --verbosity normal
+        run: npm test

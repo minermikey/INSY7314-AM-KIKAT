@@ -2,10 +2,11 @@ name: .NET Build
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "Michael's-Encryption" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "Michael's-Encryption" ]
   workflow_dispatch:
+
 
 jobs:
   build:

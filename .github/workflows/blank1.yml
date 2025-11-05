@@ -11,24 +11,29 @@ on:
       - main
       - master
       - Michaels-Encryption
+  workflow_dispatch:  # Optional: allows manual runs
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Step 2: Setup Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
+      # Step 3: Install dependencies (Backend folder)
       - name: Install dependencies
         run: npm install
-        working-directory: ./Backend  # ✅ FIXED
+        working-directory: ./Backend
 
+      # Step 4: Run tests (Backend folder)
       - name: Run tests
         run: npm test
-        working-directory: ./Backend  # ✅ FIXED
+        working-directory: ./Backend
